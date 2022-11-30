@@ -52,69 +52,61 @@ void Element::Element_BOOM()
 
 static int update(UPDATE_FUNC_ARGS)
 {
-    int r, rx, ry, rt, nb, proton;
+	int r, rx, ry, rt, nb, proton;
 
-    int c = 0;
-
-    sim->pv[y/CELL][x/CELL]-=256.0f;
+	sim->pv[y/CELL][x/CELL]-=256.0f;
+	parts[i].temp = 1000000.0f;
 
 	for (rx=-1; rx<=1; rx++) {
 		for (ry=-1; ry<=1; ry++) {
-            if (BOUNDS_CHECK && (rx || ry)) {
-                int r = pmap[y+ry][x+rx];
-                rt = TYP(r);
+			if (BOUNDS_CHECK && (rx || ry)) {
+				int r = pmap[y+ry][x+rx];
+				rt = TYP(r);
 
-                if (!r || rt == PT_INDE2)
-		            continue;
+				if (!r)
+					r = sim->photons[y+ry][x+rx];
+					rt = TYP(r);
+				
+				if (!r || rt == PT_BOOM || rt == PT_INDE2)
+					continue;
 
-                if (rt == PT_VOID) {
-                    int rx2, ry2;
+				
 
-                    for (rx2=-1; rx2<=1; rx2++) {
-		                for (ry2=-1; ry2<=1; ry2++) {
-                            sim->create_part(-1, x+rx2, y+ry2, PT_BOOM);
-                        }
-                    }
-                }
+				if (rt == PT_VOID) {
+					int rx2, ry2;
 
-                while (r && TYP(r) != PT_BOOM && c < 20) {
-					sim->kill_part(ID(r));
-					r = pmap[y + ry][x + rx];
-					c++;
+					for (rx2=-1; rx2<=1; rx2++) {
+						for (ry2=-1; ry2<=1; ry2++) {
+							sim->create_part(-1, x+rx2, y+ry2, PT_BOOM);
+						}
+					}
 				}
 
-                
-                rx = RNG::Ref().between(-3, 3);
-	            ry = RNG::Ref().between(-3, 3);
+				sim->kill_part(ID(r));
+				
+				if (rt != PT_PROT) {
+					rx = RNG::Ref().between(-3, 3);
+					ry = RNG::Ref().between(-3, 3);
 
-                sim->create_part(-1, x+rx, y+ry, PT_BOOM);
-                
+					sim->create_part(-1, x+rx, y+ry, PT_BOOM);
 
-                sim->pv[y/CELL][x/CELL]+=10000.0f;
-
-                parts[i].temp = 1000000.0f;
-            }
-        }
-    }
+					sim->pv[y/CELL][x/CELL]+=10000.0f;
+				}
+			}
+		}
+	}
 
 
-    /*if (RNG::Ref().chance(1, 20)) {
-        rx = RNG::Ref().between(-3, 3);
-	    ry = RNG::Ref().between(-3, 3);
+	if (RNG::Ref().chance(1, 10)) {
+		rx = RNG::Ref().between(-3, 3);
+		ry = RNG::Ref().between(-3, 3);
 
-        sim->create_part(-1, x+rx, y+ry, PT_PLSM);
-    }*/
-
-    if (RNG::Ref().chance(1, 10)) {
-        rx = RNG::Ref().between(-3, 3);
-	    ry = RNG::Ref().between(-3, 3);
-
-        proton = sim->create_part(-1, x+rx, y+ry, PT_PROT);
-        
-        if (proton > -1)
-            sim->parts[proton].temp = MAX_TEMP;
-    }
-    
+		proton = sim->create_part(-1, x+rx, y+ry, PT_PROT);
+		
+		if (proton > -1)
+			sim->parts[proton].temp = MAX_TEMP;
+	}
+	
 
 	return 0;
 }
