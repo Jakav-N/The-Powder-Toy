@@ -6,7 +6,7 @@ void Element::Element_SSNS()
 {
 	Identifier = "DEFAULT_PT_SSNS";
 	Name = "SSNS";
-	Colour = PIXPACK(0x336699);
+	Colour = PIXPACK(0xbdb82f);
 	MenuVisible = 1;
 	MenuSection = SC_SENSOR;
 	Enabled = 1;
