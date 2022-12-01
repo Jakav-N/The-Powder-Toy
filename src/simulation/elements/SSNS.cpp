@@ -52,7 +52,7 @@ static int update(UPDATE_FUNC_ARGS)
 {
 	int rd = parts[i].tmp2;
 	if (rd > 25) parts[i].tmp2 = rd = 25;
-	
+	parts[i].life = std::clamp(parts[i].life, 0, 4);
 
 	bool doSerialization = false;
 	bool doDeserialization = false;
