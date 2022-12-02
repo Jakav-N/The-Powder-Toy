@@ -143,7 +143,7 @@ static int update(UPDATE_FUNC_ARGS)
 				// .life deserialization.
 				else if (doDeserialization)
 				{
-					if (TYP(r) != PT_FILT) {
+					if (TYP(r) != PT_FILT && TYP(r) != PT_SSNS) {
 						//List of possible values
 						int* const possibleValues[] = {&parts[ID(r)].ctype, &parts[ID(r)].tmp,
 							&parts[ID(r)].tmp2, &parts[ID(r)].tmp3, &parts[ID(r)].tmp4};
