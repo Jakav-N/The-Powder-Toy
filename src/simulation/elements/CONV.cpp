@@ -94,7 +94,7 @@ static int update(UPDATE_FUNC_ARGS)
 						}
 					if (!r || (restrictElement && ((TYP(r) == restrictElement) == (parts[i].tmp2 == 1))))
 						continue;
-					if (TYP(r) != PT_CONV && TYP(r) != PT_DMND && TYP(r) != PT_INDE2 && TYP(r) != ctype)
+					if (TYP(r) != PT_CONV && TYP(r) != PT_DMND && TYP(r) != PT_INDE && TYP(r) != ctype)
 					{
 							sim->create_part(ID(r), x+rx, y+ry, TYP(parts[i].ctype), ID(parts[i].ctype));
 					}

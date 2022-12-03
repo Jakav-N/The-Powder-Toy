@@ -142,6 +142,8 @@ static int update(UPDATE_FUNC_ARGS)
 							}
 							else
 							{
+								if (TYP(pmap[yCopyTo][xCopyTo]) == PT_INDE)
+									return 0;
 								if (pmap[yCopyTo][xCopyTo])
 									sim->kill_part(ID(pmap[yCopyTo][xCopyTo]));
 							}

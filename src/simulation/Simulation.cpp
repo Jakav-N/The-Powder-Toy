@@ -2426,7 +2426,7 @@ void Simulation::init_can_move()
 		 || destinationType == PT_ISOZ || destinationType == PT_ISZS || destinationType == PT_QRTZ || destinationType == PT_PQRT
 		 || destinationType == PT_H2   || destinationType == PT_BGLA || destinationType == PT_C5)
 			can_move[PT_PHOT][destinationType] = 2;
-		if (destinationType != PT_INDE2 && destinationType != PT_INDE && destinationType != PT_DMND && destinationType != PT_INSL && destinationType != PT_VOID && destinationType != PT_PVOD && destinationType != PT_VIBR && destinationType != PT_BVBR && destinationType != PT_PRTI && destinationType != PT_PRTO)
+		if (destinationType != PT_INDE && destinationType != PT_DMND && destinationType != PT_INSL && destinationType != PT_VOID && destinationType != PT_PVOD && destinationType != PT_VIBR && destinationType != PT_BVBR && destinationType != PT_PRTI && destinationType != PT_PRTO)
 		{
 			can_move[PT_PROT][destinationType] = 2;
 			can_move[PT_GRVT][destinationType] = 2;
@@ -2440,11 +2440,9 @@ void Simulation::init_can_move()
 	can_move[PT_DEST][PT_BCLN] = 0;
 	can_move[PT_DEST][PT_PBCN] = 0;
 	can_move[PT_DEST][PT_ROCK] = 0;
-	can_move[PT_DEST][PT_INDE2] = 0;
 	can_move[PT_DEST][PT_INDE] = 0;
 
 	can_move[PT_BOOM][PT_INDE] = 0;
-	can_move[PT_BOOM][PT_INDE2] = 0;
 
 	can_move[PT_NEUT][PT_INVIS] = 2;
 	can_move[PT_ELEC][PT_LCRY] = 2;

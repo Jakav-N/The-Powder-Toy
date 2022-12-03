@@ -43,11 +43,11 @@ void Element::Element_INDE()
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
-    Update = &update;
-    Create = &create;
+    /*Update = &update;
+    Create = &create;*/
 }
 
-static int update(UPDATE_FUNC_ARGS)
+/*static int update(UPDATE_FUNC_ARGS)
 {
     int r = pmap[y][x];
 
@@ -69,4 +69,4 @@ static int update(UPDATE_FUNC_ARGS)
 static void create(ELEMENT_CREATE_FUNC_ARGS)
 {
 	sim->create_part(-3, x, y, PT_INDE2);
-}
+}*/

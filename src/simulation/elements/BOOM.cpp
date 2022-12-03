@@ -67,10 +67,8 @@ static int update(UPDATE_FUNC_ARGS)
 					r = sim->photons[y+ry][x+rx];
 					rt = TYP(r);
 				
-				if (!r || rt == PT_BOOM || rt == PT_INDE2)
+				if (!r || rt == PT_BOOM || rt == PT_INDE)
 					continue;
-
-				
 
 				if (rt == PT_VOID) {
 					int rx2, ry2;
