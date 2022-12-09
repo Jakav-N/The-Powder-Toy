@@ -192,7 +192,10 @@ simulation_elem_ids = [
 	[ 'ROCK',   190 ],
 	[ 'LITH',   191 ],
 	[ 'BOOM',   192 ],
-	[ 'INDE',    193 ],
+	[ 'INDE',   193 ],
+	[ 'BOUN',   194 ],
+	[ 'HTIN',   195 ],
+	[ 'HOUT',   196 ],
 ]
 
 simulation_elem_src = []
