@@ -196,6 +196,9 @@ simulation_elem_ids = [
 	[ 'BOUN',   194 ],
 	[ 'HTIN',   195 ],
 	[ 'HOUT',   196 ],
+	[ 'ABTL',   197 ],
+	[ 'STAR',   198 ],
+	[ 'EBMB',   199 ],
 ]
 
 simulation_elem_src = []

@@ -3498,6 +3498,26 @@ void Simulation::UpdateParticles(int start, int end)
 			// Kill every wall which BOOM is in:
 			if (t == PT_BOOM) { bmap[y/CELL][x/CELL] = 0; }
 
+			//Make particles kill themselves from BOOM, the real death effect
+
+			//Commented out because it lags.
+
+			/*if (t != PT_BOOM && t != PT_INDE) {
+				for (nx = -1; nx <= 1; nx++) {
+					for (ny = -1; ny <= 1; ny++) {
+						r = photons[x + nx][y + ny];
+						if (TYP(r) == PT_BOOM) {
+							if (RNG::Ref().chance(1, 2)) {
+								kill_part(ID(r));
+							} else {
+								parts[i].ctype = PT_BOOM;
+								create_part(-1, x + nx, y + ny, PT_BOOM);
+							}
+						}
+					}
+				}
+			}*/
+
 			// Kill a particle in a wall where it isn't supposed to go
 			if (bmap[y/CELL][x/CELL] &&
 			   (bmap[y/CELL][x/CELL]==WL_WALL ||
