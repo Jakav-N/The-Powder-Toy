@@ -81,16 +81,18 @@ static int update(UPDATE_FUNC_ARGS)
 	}
 	else {
 
-		if (sim->pv[y/CELL][x/CELL] > 20.0f || (parts[i].vx + parts[i].vy) > 10.0f)
-			parts[i].life = 30;
+		if (parts[i].life == 0) {
+			if (sim->pv[y/CELL][x/CELL] > 20.0f || (parts[i].vx + parts[i].vy) > 10.0f)
+				parts[i].life = 30;
 		
-		for (rx = -1; rx <= 1; rx++)
-				for (ry = -1; ry <= 1; ry++) {
-					int rt = TYP(pmap[y + ry][x + rx]);
+			for (rx = -1; rx <= 1; rx++)
+					for (ry = -1; ry <= 1; ry++) {
+						int rt = TYP(pmap[y + ry][x + rx]);
 
-					if (rt == PT_EMBR || rt == PT_BOMB || rt == PT_DEST || rt == PT_SING || rt == PT_AMTR)
-						parts[i].life = 30;
-				}
+						if (rt == PT_EMBR || rt == PT_BOMB || rt == PT_DEST || rt == PT_SING || rt == PT_AMTR)
+							parts[i].life = 30;
+					}
+		}
 		
 	
 		if (parts[i].life)
