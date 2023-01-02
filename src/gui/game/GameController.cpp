@@ -164,11 +164,11 @@ GameController::~GameController()
 	}
 }
 
-void GameController::HistoryRestore()
+bool GameController::HistoryRestore()
 {
 	if (!gameModel->HistoryCanRestore())
 	{
-		return;
+		return false;
 	}
 	// * When undoing for the first time since the last call to HistorySnapshot, save the current state.
 	//   Ctrl+Y needs this in order to bring you back to the point right before your last Ctrl+Z, because
@@ -182,6 +182,8 @@ void GameController::HistoryRestore()
 	auto &current = *gameModel->HistoryCurrent();
 	gameModel->GetSimulation()->Restore(current);
 	Client::Ref().OverwriteAuthorInfo(current.Authors);
+
+	return true;
 }
 
 void GameController::HistorySnapshot()
@@ -192,11 +194,11 @@ void GameController::HistorySnapshot()
 	gameModel->HistoryPush(gameModel->GetSimulation()->CreateSnapshot());
 }
 
-void GameController::HistoryForward()
+bool GameController::HistoryForward()
 {
 	if (!gameModel->HistoryCanForward())
 	{
-		return;
+		return false;
 	}
 	gameModel->HistoryForward();
 	// * If gameModel has nothing more to give, we've Ctrl+Y'd our way back to the original
@@ -208,6 +210,8 @@ void GameController::HistoryForward()
 	{
 		beforeRestore.reset();
 	}
+
+	return true;
 }
 
 GameView * GameController::GetView()
@@ -891,7 +895,7 @@ void GameController::Update()
 	sim->BeforeSim();
 	if (!sim->sys_pause || sim->framerender)
 	{
-		sim->UpdateParticles(0, NPART);
+		sim->UpdateParticles(0, NPART - 1);
 		sim->AfterSim();
 	}
 
@@ -1029,6 +1033,16 @@ void GameController::SetDebugHUD(bool hudState)
 bool GameController::GetDebugHUD()
 {
 	return gameView->GetDebugHUD();
+}
+
+void GameController::SetTemperatureScale(int temperatureScale)
+{
+	gameModel->SetTemperatureScale(temperatureScale);
+}
+
+int GameController::GetTemperatureScale()
+{
+	return gameModel->GetTemperatureScale();
 }
 
 void GameController::SetActiveColourPreset(int preset)
@@ -1203,7 +1217,8 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 
 			gameModel->SetSaveFile(&tempSave, gameView->ShiftBehaviour());
 			Platform::MakeDirectory(LOCAL_SAVE_DIR);
-			auto [ _, saveData ] = gameSave->Serialise();
+			auto [ fromNewerVersion, saveData ] = gameSave->Serialise();
+			(void)fromNewerVersion;
 			if (saveData.size() == 0)
 				new ErrorMessage("Error", "Unable to serialize game data.");
 			else if (!Platform::WriteFile(saveData, gameModel->GetSaveFile()->GetName()))
@@ -1462,7 +1477,7 @@ void GameController::FrameStep()
 
 void GameController::Vote(int direction)
 {
-	if(gameModel->GetSave() && gameModel->GetUser().UserID && gameModel->GetSave()->GetID() && gameModel->GetSave()->GetVote()==0)
+	if(gameModel->GetSave() && gameModel->GetUser().UserID && gameModel->GetSave()->GetID())
 	{
 		try
 		{

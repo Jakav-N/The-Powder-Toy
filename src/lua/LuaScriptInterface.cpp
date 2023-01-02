@@ -2,6 +2,7 @@
 #ifdef LUACONSOLE
 
 #include "client/http/Request.h" // includes curl.h, needs to come first to silence a warning on windows
+#include "bzip2/bz2wrap.h"
 
 #include "LuaScriptInterface.h"
 
@@ -113,6 +114,68 @@ int TptNewindexClosure(lua_State *l)
 	return lsi->tpt_newIndex(l);
 }
 
+static int bz2_compress_wrapper(lua_State *L)
+{
+	auto src = tpt_lua_checkByteString(L, 1);
+	auto maxSize = size_t(luaL_optinteger(L, 2, 0));
+	std::vector<char> dest;
+	auto result = BZ2WCompress(dest, src.data(), src.size(), maxSize);
+#define RETURN_ERR(str) lua_pushnil(L); lua_pushinteger(L, int(result)); lua_pushliteral(L, str); return 3
+	switch (result)
+	{
+	case BZ2WCompressOk: break;
+	case BZ2WCompressNomem: RETURN_ERR("out of memory");
+	case BZ2WCompressLimit: RETURN_ERR("size limit exceeded");
+	}
+#undef RETURN_ERR
+	tpt_lua_pushByteString(L, ByteString(dest.begin(), dest.end()));
+	return 1;
+}
+
+static int bz2_decompress_wrapper(lua_State *L)
+{
+	auto src = tpt_lua_checkByteString(L, 1);
+	auto maxSize = size_t(luaL_optinteger(L, 2, 0));
+	std::vector<char> dest;
+	auto result = BZ2WDecompress(dest, src.data(), src.size(), maxSize);
+#define RETURN_ERR(str) lua_pushnil(L); lua_pushinteger(L, int(result)); lua_pushliteral(L, str); return 3
+	switch (result)
+	{
+	case BZ2WDecompressOk: break;
+	case BZ2WDecompressNomem: RETURN_ERR("out of memory");
+	case BZ2WDecompressLimit: RETURN_ERR("size limit exceeded");
+	case BZ2WDecompressType:
+	case BZ2WDecompressBad:
+	case BZ2WDecompressEof: RETURN_ERR("corrupted stream");
+	}
+#undef RETURN_ERR
+	tpt_lua_pushByteString(L, ByteString(dest.begin(), dest.end()));
+	return 1;
+}
+
+static void initBZ2API(lua_State *L)
+{
+	luaL_Reg reg[] = {
+		{ "compress", bz2_compress_wrapper },
+		{ "decompress", bz2_decompress_wrapper },
+		{ NULL, NULL },
+	};
+	lua_newtable(L);
+	luaL_register(L, NULL, reg);
+#define BZ2_CONST(k, v) lua_pushinteger(L, int(v)); lua_setfield(L, -2, k)
+	BZ2_CONST("compressOk", BZ2WCompressOk);
+	BZ2_CONST("compressNomem", BZ2WCompressNomem);
+	BZ2_CONST("compressLimit", BZ2WCompressLimit);
+	BZ2_CONST("decompressOk", BZ2WDecompressOk);
+	BZ2_CONST("decompressNomem", BZ2WDecompressNomem);
+	BZ2_CONST("decompressLimit", BZ2WDecompressLimit);
+	BZ2_CONST("decompressType", BZ2WDecompressType);
+	BZ2_CONST("decompressBad", BZ2WDecompressBad);
+	BZ2_CONST("decompressEof", BZ2WDecompressEof);
+#undef BZ2_CONST
+	lua_setglobal(L, "bz2");
+}
+
 LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	CommandInterface(c, m),
 	luacon_mousex(0),
@@ -166,6 +229,8 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 #ifndef NOHTTP
 	initSocketAPI();
 #endif
+
+	initBZ2API(l);
 
 	//Old TPT API
 	int currentElementMeta, currentElement;
@@ -870,10 +935,15 @@ void LuaScriptInterface::initSimulationAPI()
 		{"framerender", simulation_framerender},
 		{"gspeed", simulation_gspeed},
 		{"takeSnapshot", simulation_takeSnapshot},
+		{"historyRestore", simulation_historyRestore},
+		{"historyForward", simulation_historyForward},
 		{"replaceModeFlags", simulation_replaceModeFlags},
 		{"listCustomGol", simulation_listCustomGol},
 		{"addCustomGol", simulation_addCustomGol},
 		{"removeCustomGol", simulation_removeCustomGol},
+		{"lastUpdatedID", simulation_lastUpdatedID},
+		{"updateUpTo", simulation_updateUpTo},
+		{"temperatureScale", simulation_temperatureScale},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -897,6 +967,8 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, R_TEMP);
 	SETCONST(l, MAX_TEMP);
 	SETCONST(l, MIN_TEMP);
+	SETCONSTF(l, MAX_PRESSURE);
+	SETCONSTF(l, MIN_PRESSURE);
 
 	SETCONST(l, TOOL_HEAT);
 	SETCONST(l, TOOL_COOL);
@@ -1090,7 +1162,7 @@ int LuaScriptInterface::simulation_partPosition(lua_State * l)
 {
 	int particleID = lua_tointeger(l, 1);
 	int argCount = lua_gettop(l);
-	if(particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type)
+	if (particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type)
 	{
 		if(argCount == 1)
 		{
@@ -1102,10 +1174,12 @@ int LuaScriptInterface::simulation_partPosition(lua_State * l)
 		}
 	}
 
-	if(argCount == 3)
+	if (argCount == 3)
 	{
-		luacon_sim->parts[particleID].x = lua_tonumber(l, 2);
-		luacon_sim->parts[particleID].y = lua_tonumber(l, 3);
+		float x = luacon_sim->parts[particleID].x;
+		float y = luacon_sim->parts[particleID].y;
+		luacon_sim->move(particleID, (int)(x + 0.5f), (int)(y + 0.5f), lua_tonumber(l, 2), lua_tonumber(l, 3));
+
 		return 0;
 	}
 	else
@@ -1122,13 +1196,15 @@ int LuaScriptInterface::simulation_partProperty(lua_State * l)
 	int particleID = luaL_checkinteger(l, 1);
 	StructProperty property;
 
-	if(particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type)
+	if (particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type)
 	{
-		if(argCount == 3)
+		if (argCount == 3)
 		{
 			lua_pushnil(l);
 			return 1;
-		} else {
+		}
+		else
+		{
 			return 0;
 		}
 	}
@@ -1168,16 +1244,9 @@ int LuaScriptInterface::simulation_partProperty(lua_State * l)
 	//Calculate memory address of property
 	intptr_t propertyAddress = (intptr_t)(((unsigned char*)&luacon_sim->parts[particleID]) + prop->Offset);
 
-	if(argCount == 3)
+	if (argCount == 3)
 	{
-		if (prop == properties.begin() + 0) // i.e. it's .type
-		{
-			luacon_sim->part_change_type(particleID, int(luacon_sim->parts[particleID].x+0.5f), int(luacon_sim->parts[particleID].y+0.5f), luaL_checkinteger(l, 3));
-		}
-		else
-		{
-			LuaSetProperty(l, *prop, propertyAddress, 3);
-		}
+		LuaSetParticleProperty(l, particleID, *prop, propertyAddress, 3);
 		return 0;
 	}
 	else
@@ -1235,10 +1304,10 @@ int LuaScriptInterface::simulation_pressure(lua_State* l)
 		height = lua_tointeger(l, 4);
 		value = (float)lua_tonumber(l, 5);
 	}
-	if(value > 256.0f)
-		value = 256.0f;
-	else if(value < -256.0f)
-		value = -256.0f;
+	if(value > MAX_PRESSURE)
+		value = MAX_PRESSURE;
+	else if(value < MIN_PRESSURE)
+		value = MIN_PRESSURE;
 
 	set_map(x, y, width, height, value, 1);
 	return 0;
@@ -1309,10 +1378,10 @@ int LuaScriptInterface::simulation_velocityX(lua_State* l)
 		height = lua_tointeger(l, 4);
 		value = (float)lua_tonumber(l, 5);
 	}
-	if(value > 256.0f)
-		value = 256.0f;
-	else if(value < -256.0f)
-		value = -256.0f;
+	if(value > MAX_PRESSURE)
+		value = MAX_PRESSURE;
+	else if(value < MIN_PRESSURE)
+		value = MIN_PRESSURE;
 
 	set_map(x, y, width, height, value, 3);
 	return 0;
@@ -1346,10 +1415,10 @@ int LuaScriptInterface::simulation_velocityY(lua_State* l)
 		height = lua_tointeger(l, 4);
 		value = (float)lua_tonumber(l, 5);
 	}
-	if(value > 256.0f)
-		value = 256.0f;
-	else if(value < -256.0f)
-		value = -256.0f;
+	if(value > MAX_PRESSURE)
+		value = MAX_PRESSURE;
+	else if(value < MIN_PRESSURE)
+		value = MIN_PRESSURE;
 
 	set_map(x, y, width, height, value, 4);
 	return 0;
@@ -2330,6 +2399,21 @@ int LuaScriptInterface::simulation_takeSnapshot(lua_State * l)
 	return 0;
 }
 
+
+int LuaScriptInterface::simulation_historyRestore(lua_State *l)
+{
+	bool successful = luacon_controller->HistoryRestore();
+	lua_pushboolean(l, successful);
+	return 1;
+}
+
+int LuaScriptInterface::simulation_historyForward(lua_State *l)
+{
+	bool successful = luacon_controller->HistoryForward();
+	lua_pushboolean(l, successful);
+	return 1;
+}
+
 int LuaScriptInterface::simulation_replaceModeFlags(lua_State *l)
 {
 	if (lua_gettop(l) == 0)
@@ -2408,6 +2492,68 @@ int LuaScriptInterface::simulation_removeCustomGol(lua_State *l)
 		luacon_model->BuildMenus();
 	lua_pushboolean(l, removedAny);
 	return 1;
+}
+
+int LuaScriptInterface::simulation_lastUpdatedID(lua_State *l)
+{
+	if (luacon_sim->debug_mostRecentlyUpdated != -1)
+	{
+		lua_pushinteger(l, luacon_sim->debug_mostRecentlyUpdated);
+	}
+	else
+	{
+		lua_pushnil(l);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::simulation_updateUpTo(lua_State *l)
+{
+	int upTo = NPART - 1;
+	if (lua_gettop(l) > 0)
+	{
+		upTo = luaL_checkinteger(l, 1);
+	}
+	if (upTo < 0 || upTo >= NPART)
+	{
+		return luaL_error(l, "ID not in valid range");
+	}
+	if (upTo < luacon_sim->debug_currentParticle)
+	{
+		upTo = NPART - 1;
+	}
+	if (luacon_sim->debug_currentParticle == 0)
+	{
+		luacon_sim->framerender = 1;
+		luacon_sim->BeforeSim();
+		luacon_sim->framerender = 0;
+	}
+	luacon_sim->UpdateParticles(luacon_sim->debug_currentParticle, upTo);
+	if (upTo < NPART - 1)
+	{
+		luacon_sim->debug_currentParticle = upTo + 1;
+	}
+	else
+	{
+		luacon_sim->AfterSim();
+		luacon_sim->debug_currentParticle = 0;
+	}
+	return 0;
+}
+
+
+int LuaScriptInterface::simulation_temperatureScale(lua_State *l)
+{
+	if (lua_gettop(l) == 0)
+	{
+		lua_pushinteger(l, luacon_model->GetTemperatureScale());
+		return 1;
+	}
+	int temperatureScale = luaL_checkinteger(l, 1);
+	if (temperatureScale < 0 || temperatureScale > 2)
+		return luaL_error(l, "Invalid temperature scale");
+	luacon_model->SetTemperatureScale(temperatureScale);
+	return 0;
 }
 
 //// Begin Renderer API
@@ -2866,6 +3012,28 @@ void LuaScriptInterface::LuaSetProperty(lua_State* l, StructProperty property, i
 			break;
 		case StructProperty::Removed:
 			break;
+	}
+}
+
+
+void LuaScriptInterface::LuaSetParticleProperty(lua_State* l, int particleID, StructProperty property, intptr_t propertyAddress, int stackPos)
+{
+	if (property.Name == "type")
+	{
+		luacon_sim->part_change_type(particleID, int(luacon_sim->parts[particleID].x+0.5f), int(luacon_sim->parts[particleID].y+0.5f), luaL_checkinteger(l, 3));
+	}
+	else if (property.Name == "x" || property.Name == "y")
+	{
+		float val = luaL_checknumber(l, 3);
+		float x = luacon_sim->parts[particleID].x;
+		float y = luacon_sim->parts[particleID].y;
+		float nx = property.Name == "x" ? val : x;
+		float ny = property.Name == "y" ? val : y;
+		luacon_sim->move(particleID, (int)(x + 0.5f), (int)(y + 0.5f), nx, ny);
+	}
+	else
+	{
+		LuaSetProperty(l, property, propertyAddress, 3);
 	}
 }
 
@@ -4010,6 +4178,8 @@ void LuaScriptInterface::initEventAPI()
 	lua_pushinteger(l, LuaEvents::tick); lua_setfield(l, -2, "tick");
 	lua_pushinteger(l, LuaEvents::blur); lua_setfield(l, -2, "blur");
 	lua_pushinteger(l, LuaEvents::close); lua_setfield(l, -2, "close");
+	lua_pushinteger(l, LuaEvents::beforesim); lua_setfield(l, -2, "beforesim");
+	lua_pushinteger(l, LuaEvents::aftersim); lua_setfield(l, -2, "aftersim");
 }
 
 int LuaScriptInterface::event_register(lua_State * l)
