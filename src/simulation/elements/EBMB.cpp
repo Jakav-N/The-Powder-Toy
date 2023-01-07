@@ -56,7 +56,7 @@ static int update(UPDATE_FUNC_ARGS)
 
 	//Some code from CONV.cpp to set the ctype. It's slightly modified.
 	int ctype = TYP(parts[i].ctype);
-	if (ctype<=0 || ctype>=PT_NUM || !sim->elements[ctype].Enabled || ctype==PT_EBMB)
+	if (!sim->IsElement(ctype) || ctype==PT_EBMB)
 	{
 		for (rx=-1; rx<2; rx++)
 			for (ry=-1; ry<2; ry++)
@@ -118,7 +118,7 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	*colg = 128;
 	*colb = 128;
 
-	if (cpart->ctype > 0 && cpart->ctype < PT_NUM && ren->sim->elements[cpart->ctype].Enabled) {
+	if (ren->sim->IsElement(cpart->ctype)) {
 		int ctype_color = ren->sim->elements[cpart->ctype].Colour;
 
 		*colr = PIXR(ctype_color);

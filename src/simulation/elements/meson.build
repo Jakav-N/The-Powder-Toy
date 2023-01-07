@@ -199,6 +199,7 @@ simulation_elem_ids = [
 	[ 'ABTL',   197 ],
 	[ 'STAR',   198 ],
 	[ 'EBMB',   199 ],
+	[ 'CRST',   200 ],
 ]
 
 simulation_elem_src = []
