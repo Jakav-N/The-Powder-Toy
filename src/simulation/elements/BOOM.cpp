@@ -19,7 +19,8 @@ void Element::Element_BOOM()
 	Loss = 0.95f;
 	Collision = -0.1f;
 
-	//I think this controls how much it is affected by gravity. If so, making it zero should do the trick.
+	//This did not control how much it was affected by gravity, though I thought it did.
+    //I changed it in Simulation.cpp to not be affected.
 	Gravity = 0.0f;
 	Diffusion = 0.00f;
 	HotAir = 0.000f	* CFDS;
@@ -33,7 +34,7 @@ void Element::Element_BOOM()
 	Weight = 101;
 
 	HeatConduct = 150;
-	Description = "More destructive Bomb, can break through virtually anything.";
+	Description = "Very destructive; destroys virtually anything.";
 
 	Properties = TYPE_ENERGY;
 

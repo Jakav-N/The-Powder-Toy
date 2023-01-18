@@ -2451,6 +2451,7 @@ void Simulation::init_can_move()
 	can_move[PT_DEST][PT_INDE] = 0;
 
 	can_move[PT_BOOM][PT_INDE] = 0;
+	can_move[PT_BOOM][PT_CNCT] = 1;
 
 	can_move[PT_NEUT][PT_INVIS] = 2;
 	can_move[PT_ELEC][PT_LCRY] = 2;

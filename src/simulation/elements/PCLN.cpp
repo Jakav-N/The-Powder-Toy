@@ -108,6 +108,13 @@ static int update(UPDATE_FUNC_ARGS)
 				for (ry = -1; ry < 2; ry++)
 					if (rx || ry)
 					{
+
+						//BOOM infection
+						if (TYP(pmap[y + ry][x + rx]) == PT_BOOM) {
+							sim->part_change_type(i, x, y, PT_BOOM);
+							return 0;
+						}
+
 						int r = sim->create_part(-1, x + rx, y + ry, PT_PHOT);
 						if (r != -1)
 						{
