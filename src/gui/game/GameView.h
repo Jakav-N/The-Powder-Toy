@@ -1,12 +1,13 @@
-#ifndef GAMEVIEW_H
-#define GAMEVIEW_H
-
-#include <ctime>
-#include <vector>
-#include <deque>
+#pragma once
 #include "common/String.h"
 #include "gui/interface/Window.h"
 #include "simulation/Sample.h"
+#include "graphics/FindingElement.h"
+#include <ctime>
+#include <deque>
+#include <memory>
+#include <vector>
+#include <optional>
 
 enum DrawMode
 {
@@ -80,7 +81,7 @@ private:
 	ui::Point currentPoint, lastPoint;
 	GameController * c;
 	Renderer * ren;
-	Brush * activeBrush;
+	Brush const *activeBrush;
 	//UI Elements
 	std::vector<ui::Button*> quickOptionButtons;
 
@@ -118,8 +119,12 @@ private:
 	ui::Point currentMouse;
 	ui::Point mousePosition;
 
-	VideoBuffer * placeSaveThumb;
-	ui::Point placeSaveOffset;
+	std::unique_ptr<VideoBuffer> placeSaveThumb;
+	Mat2<int> placeSaveTransform = Mat2<int>::Identity;
+	Vec2<int> placeSaveTranslate = Vec2<int>::Zero;
+	void TranslateSave(Vec2<int> addToTranslate);
+	void TransformSave(Mat2<int> mulToTransform);
+	void ApplyTransformPlaceSave();
 
 	SimulationSample sample;
 
@@ -135,6 +140,11 @@ private:
 	void disableAltBehaviour();
 	void UpdateDrawMode();
 	void UpdateToolStrength();
+
+	Vec2<int> PlaceSavePos() const;
+
+	std::optional<FindingElement> FindingElementCandidate() const;
+
 public:
 	GameView();
 	virtual ~GameView();
@@ -156,17 +166,16 @@ public:
 	bool AltBehaviour(){ return altBehaviour; }
 	SelectMode GetSelectMode() { return selectMode; }
 	void BeginStampSelection();
-	ui::Point GetPlaceSaveOffset() { return placeSaveOffset; }
-	void SetPlaceSaveOffset(ui::Point offset) { placeSaveOffset = offset; }
 	ByteString TakeScreenshot(int captureUI, int fileType);
 	int Record(bool record);
 
 	//all of these are only here for one debug lines
 	bool GetMouseDown() { return isMouseDown; }
-	bool GetDrawingLine() { return drawMode == DrawLine && isMouseDown; }
+	bool GetDrawingLine() { return drawMode == DrawLine && isMouseDown && selectMode == SelectNone; }
 	bool GetDrawSnap() { return drawSnap; }
 	ui::Point GetLineStartCoords() { return drawPoint1; }
 	ui::Point GetLineFinishCoords() { return currentMouse; }
+	ui::Point GetCurrentMouse() { return currentMouse; }
 	ui::Point lineSnapCoords(ui::Point point1, ui::Point point2);
 	ui::Point rectSnapCoords(ui::Point point1, ui::Point point2);
 
@@ -186,6 +195,7 @@ public:
 	void NotifyColourPresetsChanged(GameModel * sender);
 	void NotifyColourActivePresetChanged(GameModel * sender);
 	void NotifyPlaceSaveChanged(GameModel * sender);
+	void NotifyTransformedPlaceSaveChanged(GameModel *sender);
 	void NotifyNotificationsChanged(GameModel * sender);
 	void NotifyLogChanged(GameModel * sender, String entry);
 	void NotifyToolTipChanged(GameModel * sender);
@@ -220,6 +230,6 @@ public:
 	void DoKeyRelease(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt) override;
 
 	class OptionListener;
-};
 
-#endif // GAMEVIEW_H
+	void SkipIntroText();
+};

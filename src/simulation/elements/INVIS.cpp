@@ -7,7 +7,7 @@ void Element::Element_INVIS()
 {
 	Identifier = "DEFAULT_PT_INVIS";
 	Name = "INVS";
-	Colour = PIXPACK(0x00CCCC);
+	Colour = 0x00CCCC_rgb;
 	MenuVisible = 1;
 	MenuSection = SC_SENSOR;
 	Enabled = 1;
@@ -32,7 +32,7 @@ void Element::Element_INVIS()
 	HeatConduct = 164;
 	Description = "Invisible to particles while under pressure.";
 
-	Properties = TYPE_SOLID | PROP_NEUTPASS;
+	Properties = TYPE_SOLID | PROP_NEUTPASS | PROP_PHOTPASS;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

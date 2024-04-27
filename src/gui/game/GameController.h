@@ -1,20 +1,22 @@
-#ifndef GAMECONTROLLER_H
-#define GAMECONTROLLER_H
-#include "Config.h"
-
+#pragma once
+#include "lua/CommandInterfacePtr.h"
+#include "client/ClientListener.h"
+#include "client/StartupInfo.h"
+#include "gui/interface/Point.h"
+#include "gui/interface/Colour.h"
+#include "gui/SavePreviewType.h"
+#include "simulation/Sign.h"
+#include "simulation/Particle.h"
+#include "Misc.h"
 #include <vector>
 #include <utility>
 #include <memory>
 
-#include "client/ClientListener.h"
-
-#include "gui/interface/Point.h"
-#include "gui/interface/Colour.h"
-
-#include "simulation/Sign.h"
-#include "simulation/Particle.h"
-
-#include "Misc.h"
+constexpr auto DEBUG_PARTS      = 0x0001;
+constexpr auto DEBUG_ELEMENTPOP = 0x0002;
+constexpr auto DEBUG_LINES      = 0x0004;
+constexpr auto DEBUG_PARTICLE   = 0x0008;
+constexpr auto DEBUG_SURFNORM   = 0x0010;
 
 class DebugInfo;
 class SaveFile;
@@ -27,7 +29,7 @@ class LocalBrowserController;
 class SearchController;
 class PreviewController;
 class RenderController;
-class CommandInterface;
+class VideoBuffer;
 class Tool;
 class Menu;
 class SaveInfo;
@@ -37,6 +39,8 @@ class TagsController;
 class ConsoleController;
 class GameController: public ClientListener
 {
+	CommandInterfacePtr commandInterface;
+
 private:
 	bool firstTick;
 	int foundSignID;
@@ -51,8 +55,7 @@ private:
 	TagsController * tagsWindow;
 	LocalBrowserController * localBrowser;
 	OptionsController * options;
-	CommandInterface * commandInterface;
-	std::vector<DebugInfo*> debugInfo;
+	std::vector<std::unique_ptr<DebugInfo>> debugInfo;
 	std::unique_ptr<Snapshot> beforeRestore;
 	unsigned int debugFlags;
 	
@@ -105,6 +108,7 @@ public:
 	void DrawLine(int toolSelection, ui::Point point1, ui::Point point2);
 	void DrawFill(int toolSelection, ui::Point point);
 	ByteString StampRegion(ui::Point point1, ui::Point point2);
+	ByteString StampRegion(ui::Point point1, ui::Point point2, bool includePressure);
 	void CopyRegion(ui::Point point1, ui::Point point2);
 	void CutRegion(ui::Point point1, ui::Point point2);
 	void Update();
@@ -121,7 +125,10 @@ public:
 	bool GetDebugHUD();
 	void SetTemperatureScale(int temperatureScale);
 	int GetTemperatureScale();
+	int GetEdgeMode();
+	void SetEdgeMode(int edgeMode);
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
+	unsigned int GetDebugFlags() const { return debugFlags; }
 	void SetActiveMenu(int menuID);
 	std::vector<Menu*> GetMenuList();
 	int GetNumMenus(bool onlyEnabled);
@@ -130,18 +137,19 @@ public:
 	void SetActiveTool(int toolSelection, Tool * tool);
 	void SetActiveTool(int toolSelection, ByteString identifier);
 	void SetLastTool(Tool * tool);
+	Tool *GetLastTool();
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void SetActiveColourPreset(int preset);
 	void SetColour(ui::Colour colour);
 	void SetToolStrength(float value);
-	void LoadSaveFile(SaveFile * file);
-	void LoadSave(SaveInfo * save);
+	void LoadSaveFile(std::unique_ptr<SaveFile> file);
+	void LoadSave(std::unique_ptr<SaveInfo> save);
 	void OpenSearch(String searchText);
 	void OpenLogin();
 	void OpenProfile();
 	void OpenTags();
-	void OpenSavePreview(int saveID, int saveDate, bool instant);
+	void OpenSavePreview(int saveID, int saveDate, SavePreviewType savePreiviewType);
 	void OpenSavePreview();
 	void OpenLocalSaveWindow(bool asCurrent);
 	void OpenLocalBrowse();
@@ -160,10 +168,10 @@ public:
 	void ShowConsole();
 	void HideConsole();
 	void FrameStep();
-	void TranslateSave(ui::Point point);
-	void TransformSave(matrix2d transform);
+	void TransformPlaceSave(Mat2<int> transform, Vec2<int> nudge);
 	bool MouseInZoom(ui::Point position);
 	ui::Point PointTranslate(ui::Point point);
+	ui::Point PointTranslateNoClamp(ui::Point point);
 	ui::Point NormaliseBlockCoord(ui::Point point);
 	String ElementResolve(int type, int ctype);
 	String BasicParticleInfo(Particle const &sample_part);
@@ -182,17 +190,18 @@ public:
 	void ToggleNewtonianGravity();
 
 	bool LoadClipboard();
-	void LoadStamp(GameSave *stamp);
+	void LoadStamp(std::unique_ptr<GameSave> stamp);
 
 	void RemoveNotification(Notification * notification);
 
 	void NotifyUpdateAvailable(Client * sender) override;
 	void NotifyAuthUserChanged(Client * sender) override;
-	void NotifyNewNotification(Client * sender, std::pair<String, ByteString> notification) override;
-	void RunUpdater();
+	void NotifyNewNotification(Client * sender, ServerNotification notification) override;
+	void RunUpdater(UpdateInfo info);
 	bool GetMouseClickRequired();
 
 	void RemoveCustomGOLType(const ByteString &identifier);
-};
 
-#endif // GAMECONTROLLER_H
+	void BeforeSimDraw();
+	void AfterSimDraw();
+};

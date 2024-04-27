@@ -4,9 +4,9 @@ void Element::Element_LOLZ()
 {
 	Identifier = "DEFAULT_PT_LOLZ";
 	Name = "LOLZ";
-	Colour = PIXPACK(0x569212);
-	MenuVisible = 1;
-	MenuSection = SC_CRACKER2;
+	Colour = 0x569212_rgb;
+	MenuVisible = 0;
+	MenuSection = SC_SPECIAL;
 	Enabled = 1;
 
 	Advection = 0.0f;

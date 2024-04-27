@@ -1,4 +1,4 @@
-The Powder Toy - January 2023
+The Powder Toy - April 2024
 ==========================
 
 Get the latest version [from the Powder Toy website](https://powdertoy.co.uk/Download.html).
@@ -25,7 +25,7 @@ Thanks
 * Skresanov Savely
 * cracker64
 * Catelite
-* Bryan Hoyle
+* Victoria Hoyle
 * Nathan Cousins
 * jacksonmj
 * Felix Wallin
@@ -82,6 +82,7 @@ Controls
 | I                       | Invert Pressure and Velocity map                                |
 | W                       | Cycle gravity modes (use with Ctrl when STK2 is out)            |
 | Y                       | Cycle air modes                                                 |
+| Ctrl + E                | Cycle edge modes                                                |
 | B                       | Enter decoration editor menu                                    |
 | Ctrl + B                | Toggle decorations on/off                                       |
 | N                       | Toggle Newtonian Gravity on/off                                 |
@@ -107,6 +108,7 @@ Controls
 | Shift + R               | Horizontal mirror for selected area when pasting stamps         |
 | Ctrl + Shift + R        | Vertical mirror for selected area when pasting stamps           |
 | R                       | Rotate selected area counterclockwise when pasting stamps       |
+| F11                     | Toggle fullscreen                                               |
 
 Command Line
 ---------------------------------------------------------------------------

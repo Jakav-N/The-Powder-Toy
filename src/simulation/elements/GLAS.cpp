@@ -7,7 +7,7 @@ void Element::Element_GLAS()
 {
 	Identifier = "DEFAULT_PT_GLAS";
 	Name = "GLAS";
-	Colour = PIXPACK(0x404040);
+	Colour = 0x404040_rgb;
 	MenuVisible = 1;
 	MenuSection = SC_SOLIDS;
 	Enabled = 1;
@@ -32,7 +32,7 @@ void Element::Element_GLAS()
 	HeatConduct = 150;
 	Description = "Glass. Meltable. Shatters under pressure, and refracts photons.";
 
-	Properties = TYPE_SOLID | PROP_NEUTPASS | PROP_HOT_GLOW | PROP_SPARKSETTLE;
+	Properties = TYPE_SOLID | PROP_NEUTPASS | PROP_PHOTPASS | PROP_HOT_GLOW | PROP_SPARKSETTLE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
