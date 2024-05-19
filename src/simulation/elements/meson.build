@@ -203,6 +203,7 @@ simulation_elem_names = [
 	'EBMB',
 	'CRST',
 	'IIVS',
+	'CSNS',
 ]
 
 simulation_elem_src = []
